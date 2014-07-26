@@ -1,11 +1,14 @@
--- floatindev 0.3.0 by paramat
+-- floatindev 0.3.1 by paramat
 -- For latest stable Minetest and back to 0.4.8
 -- Depends default
 -- License: code WTFPL
 
+-- use voxelmanip for scanning chunk below
+-- use sidelen, works with any chunksize
+
 -- Parameters
 
-local YMIN = 1 -- Approximate realm limits.
+local YMIN = 1 -- Approximate realm limits
 local YMAX = 33000
 local XMIN = -33000
 local XMAX = 33000
@@ -132,6 +135,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	local data = vm:get_data()
 	
 	local c_air = minetest.get_content_id("air")
+	local c_water = minetest.get_content_id("default:water_source")
 	
 	local c_floatstone = minetest.get_content_id("floatindev:floatstone")
 	local c_floatsand = minetest.get_content_id("floatindev:floatsand")
@@ -154,15 +158,17 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	local nixz = 1
 	local stable = {}
 	for z = z0, z1 do -- for each xy plane progressing northwards
+		local viu = area:index(x0, y0-1, z) -- initialise stability table
 		for x = x0, x1 do
 			local si = x - x0 + 1
-			local nodename = minetest.get_node({x=x,y=y0-1,z=z}).name
-			if nodename == "air"
-			or nodename == "default:water_source" then
+			local nodidu = data[viu]
+			if nodidu == c_air
+			or nodidu == c_water then
 				stable[si] = 0
 			else -- all else including ignore in ungenerated chunks
 				stable[si] = 2
 			end
+			viu = viu + 1
 		end
 		for y = y0, y1 do -- for each x row progressing upwards
 			local vi = area:index(x0, y, z)
@@ -200,9 +206,9 @@ minetest.register_on_generated(function(minp, maxp, seed)
 				nixz = nixz + 1
 				vi = vi + 1
 			end
-			nixz = nixz - 80
+			nixz = nixz - sidelen
 		end
-		nixz = nixz + 80
+		nixz = nixz + sidelen
 	end
 	
 	vm:set_data(data)
